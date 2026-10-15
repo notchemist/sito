@@ -414,7 +414,15 @@
           <div class="calc-config-panel">
             <h3 class="panel-title">2. Configura Parametri di Stampa</h3>
 
-            <form id="quote-form">
+            <form id="quote-form" action="https://formspree.io/f/xyeklwwa" method="POST" enctype="multipart/form-data">
+              <!-- Hidden Inputs per Dati Preventivo Formspree -->
+              <input type="hidden" name="Modalita_Colore" id="hidden-mode" value="Monocolore">
+              <input type="hidden" name="Colori_Assegnati" id="hidden-colors" value="Nero Stealth">
+              <input type="hidden" name="Materiale_Scelto" id="hidden-material" value="PLA Tough">
+              <input type="hidden" name="Infill_Riempimento" id="hidden-infill" value="25%">
+              <input type="hidden" name="Risoluzione_Layer" id="hidden-resolution" value="0.20 mm">
+              <input type="hidden" name="Dimensione_Oggetto" id="hidden-size" value="Medio">
+              <input type="hidden" name="Totale_Preventivo" id="hidden-total-price" value="€20.40">
               <!-- Tecnologia e Modalità Colore -->
               <div class="form-group">
                 <label class="form-label">Modalità di Stampa:</label>
@@ -588,17 +596,17 @@
                 <div class="grid-2-col">
                   <div class="form-group">
                     <label class="form-label" for="client-name">Nome e Cognome *</label>
-                    <input type="text" id="client-name" class="form-input" placeholder="Mario Rossi" required>
+                    <input type="text" id="client-name" name="Nome_Cliente" class="form-input" placeholder="Mario Rossi" required>
                   </div>
                   <div class="form-group">
                     <label class="form-label" for="client-email">Email per Conferma Preventivo *</label>
-                    <input type="email" id="client-email" class="form-input" placeholder="mario@esempio.it" required>
+                    <input type="email" id="client-email" name="Email_Cliente" class="form-input" placeholder="mario@esempio.it" required>
                   </div>
                 </div>
                 
                 <div class="form-group">
                   <label class="form-label" for="client-address">Città / CAP (Per verificare tempi di spedizione)</label>
-                  <input type="text" id="client-address" class="form-input" placeholder="Es. Milano, Roma, Napoli o CAP...">
+                  <input type="text" id="client-address" name="Citta_CAP" class="form-input" placeholder="Es. Milano, Roma, Napoli o CAP...">
                 </div>
 
                 <div class="submit-buttons-wrap" style="display:flex; flex-direction:column; gap:10px;">

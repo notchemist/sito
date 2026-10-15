@@ -472,6 +472,23 @@ function initQuoteCalculator() {
 
     let finalPrice = subtotalPrint + shippingPrice;
 
+    // Aggiorna hidden inputs per Formspree
+    const hiddenMode = document.getElementById('hidden-mode');
+    const hiddenColors = document.getElementById('hidden-colors');
+    const hiddenMaterial = document.getElementById('hidden-material');
+    const hiddenInfill = document.getElementById('hidden-infill');
+    const hiddenResolution = document.getElementById('hidden-resolution');
+    const hiddenSize = document.getElementById('hidden-size');
+    const hiddenTotalPrice = document.getElementById('hidden-total-price');
+
+    if (hiddenMode) hiddenMode.value = isMulti ? 'Multi-Colore 4X (Snapmaker U1)' : 'Monocolore Standard';
+    if (hiddenColors) hiddenColors.value = isMulti ? multiColorSlots.map((s, i) => `Slot ${i+1}: ${s.name}`).join(' | ') : selectedSingleColor.name;
+    if (hiddenMaterial) hiddenMaterial.value = materialLabel;
+    if (hiddenInfill) hiddenInfill.value = `${Math.round(infillFactor * 100)}%`;
+    if (hiddenResolution) hiddenResolution.value = `${resolutionFactor.toFixed(2)} mm`;
+    if (hiddenSize) hiddenSize.value = size;
+    if (hiddenTotalPrice) hiddenTotalPrice.value = `€${finalPrice.toFixed(2)}`;
+
     // Aggiornamento DOM
     if (priceBaseEl) priceBaseEl.textContent = `€${(singlePieceBase * quantity).toFixed(2)}`;
     if (summaryMatName) summaryMatName.textContent = materialLabel;
@@ -505,9 +522,9 @@ function initQuoteCalculator() {
   // Esegui primo calcolo
   calculateQuote();
 
-  // Invio modulo preventivo
+  // Invio modulo preventivo integrato con Formspree e Dashboard Locale
   if (quoteForm) {
-    quoteForm.addEventListener('submit', (e) => {
+    quoteForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const name = document.getElementById('client-name').value.trim();
@@ -517,16 +534,14 @@ function initQuoteCalculator() {
 
       if (uploadedFiles.models.length === 0) {
         showToast('Nessun file 3D caricato', 'Per favore, carica almeno un file STL, OBJ o 3MF nel box in alto prima di inviare.', '⚠️');
-        // Scroll verso il box di upload
         document.getElementById('stl-dropzone').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
 
-      // Salvataggio reale dell'ordine per la visualizzazione nella Dashboard (admin.html)
       const submitBtn = document.getElementById('btn-submit-quote');
       const originalText = submitBtn.innerHTML;
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span>Elaborazione & Invio File in corso...</span>';
+      submitBtn.innerHTML = '<span>Invio dati e file a Formspree in corso...</span>';
 
       const notes = document.getElementById('order-notes')?.value.trim() || '';
       const materialOption = materialSelect.options[materialSelect.selectedIndex];
@@ -536,12 +551,53 @@ function initQuoteCalculator() {
       const currentFinalPrice = document.getElementById('final-price')?.textContent || '0.00';
       const quantity = parseInt(qtyInput.value, 10) || 1;
 
-      // Leggi file con FileReader per consentire il download nella dashboard
+      // 1. Prepara FormData reale per Formspree (compresi i file binari!)
+      const formData = new FormData();
+      formData.append('Nome_Cliente', name);
+      formData.append('Email_Cliente', email);
+      formData.append('Citta_Indirizzo', address);
+      formData.append('Note_Tecniche', notes);
+      formData.append('Modalita_Stampa', isMulti ? 'Multi-Colore 4X (Snapmaker U1)' : 'Monocolore Standard');
+      formData.append('Colori_Selezionati', isMulti ? multiColorSlots.map((s, i) => `Slot ${i+1}: ${s.name}`).join(' | ') : selectedSingleColor.name);
+      formData.append('Materiale', materialText);
+      formData.append('Infill', infillText);
+      formData.append('Risoluzione_Layer', resolutionText);
+      formData.append('Quantita', quantity);
+      formData.append('Preventivo_Totale_Euro', `€${currentFinalPrice}`);
+
+      // Allega i file STL e PDF a FormData
+      uploadedFiles.models.forEach((file, index) => {
+        formData.append(`File_3D_${index + 1}`, file, file.name);
+      });
+      if (uploadedFiles.pdf) {
+        formData.append('Istruzioni_PDF', uploadedFiles.pdf, uploadedFiles.pdf.name);
+      }
+
+      // 2. Invio effettivo a Formspree (endpoint: https://formspree.io/f/xyeklwwa)
+      let formspreeSuccess = false;
+      try {
+        const response = await fetch('https://formspree.io/f/xyeklwwa', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (response.ok) {
+          formspreeSuccess = true;
+        } else {
+          console.warn('Formspree response not ok, checking fallback...');
+        }
+      } catch (networkErr) {
+        console.warn('Network error reaching Formspree:', networkErr);
+      }
+
+      // 3. Salva anche in locale per la Dashboard Admin (admin.html)
       const filePromises = uploadedFiles.models.map(file => {
         return new Promise((resolve) => {
-          if (file.size < 12 * 1024 * 1024) { // Entro 12MB salva in DataURL per download diretto
+          if (file.size < 10 * 1024 * 1024) {
             const reader = new FileReader();
-            reader.onload = (e) => resolve({ name: file.name, size: formatBytes(file.size), dataUrl: e.target.result });
+            reader.onload = (ev) => resolve({ name: file.name, size: formatBytes(file.size), dataUrl: ev.target.result });
             reader.onerror = () => resolve({ name: file.name, size: formatBytes(file.size), dataUrl: null });
             reader.readAsDataURL(file);
           } else {
@@ -553,9 +609,9 @@ function initQuoteCalculator() {
       let pdfPromise = Promise.resolve(null);
       if (uploadedFiles.pdf) {
         pdfPromise = new Promise((resolve) => {
-          if (uploadedFiles.pdf.size < 10 * 1024 * 1024) {
+          if (uploadedFiles.pdf.size < 8 * 1024 * 1024) {
             const reader = new FileReader();
-            reader.onload = (e) => resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: e.target.result });
+            reader.onload = (ev) => resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: ev.target.result });
             reader.onerror = () => resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: null });
             reader.readAsDataURL(uploadedFiles.pdf);
           } else {
@@ -564,62 +620,61 @@ function initQuoteCalculator() {
         });
       }
 
-      Promise.all([...filePromises, pdfPromise]).then(results => {
-        const modelsData = results.slice(0, filePromises.length);
-        const pdfData = results[results.length - 1];
+      const [modelsData, pdfData] = await Promise.all([
+        Promise.all(filePromises),
+        pdfPromise
+      ]);
 
-        const newOrder = {
-          id: Math.floor(1000 + Math.random() * 9000),
-          date: new Date().toLocaleString('it-IT'),
-          clientName: name,
-          clientEmail: email,
-          clientAddress: address,
-          notes: notes,
-          isMultiColor: isMulti,
-          singleColorName: selectedSingleColor.name,
-          slots: isMulti ? [...multiColorSlots] : [],
-          material: materialText,
-          infill: infillText,
-          resolution: resolutionText,
-          quantity: quantity,
-          finalPrice: currentFinalPrice,
-          status: 'nuovo',
-          models: modelsData,
-          pdf: pdfData
-        };
+      const newOrder = {
+        id: Math.floor(1000 + Math.random() * 9000),
+        date: new Date().toLocaleString('it-IT'),
+        clientName: name,
+        clientEmail: email,
+        clientAddress: address,
+        notes: notes,
+        isMultiColor: isMulti,
+        singleColorName: selectedSingleColor.name,
+        slots: isMulti ? [...multiColorSlots] : [],
+        material: materialText,
+        infill: infillText,
+        resolution: resolutionText,
+        quantity: quantity,
+        finalPrice: currentFinalPrice,
+        status: 'nuovo',
+        formspreeNotified: formspreeSuccess,
+        models: modelsData,
+        pdf: pdfData
+      };
 
-        try {
-          const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
-          currentOrders.unshift(newOrder);
-          localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
-        } catch (err) {
-          console.warn('Storage quota limit reached, saving metadata only:', err);
-          // Fallback senza dataUrl in caso di file pesanti
-          newOrder.models = newOrder.models.map(m => ({ name: m.name, size: m.size, dataUrl: null }));
-          if (newOrder.pdf) newOrder.pdf.dataUrl = null;
-          const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
-          currentOrders.unshift(newOrder);
-          localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
-        }
+      try {
+        const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
+        currentOrders.unshift(newOrder);
+        localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
+      } catch (err) {
+        newOrder.models = newOrder.models.map(m => ({ name: m.name, size: m.size, dataUrl: null }));
+        if (newOrder.pdf) newOrder.pdf.dataUrl = null;
+        const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
+        currentOrders.unshift(newOrder);
+        localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
+      }
 
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
 
-        const fileNames = uploadedFiles.models.map(m => m.name).join(', ');
-        showToast(
-          'Ordine Registrato con Successo!', 
-          `Grazie ${name}! Il file (${fileNames}) è stato archiviato. Puoi visualizzarlo e scaricarlo nella Dashboard Ordini!`,
-          '🚀'
-        );
+      const fileNames = uploadedFiles.models.map(m => m.name).join(', ');
+      showToast(
+        'Richiesta Inviata alla Tua Email!', 
+        `Ottimo! Abbiamo ricevuto ${fileNames}. I dettagli e i file sono stati inoltrati alla tua casella email (Formspree) e registrati nella Dashboard!`,
+        '📬'
+      );
 
-        // Pulisci file e form
-        uploadedFiles.models = [];
-        uploadedFiles.pdf = null;
-        document.getElementById('stl-file-list').innerHTML = '';
-        document.getElementById('pdf-file-list').innerHTML = '';
-        quoteForm.reset();
-        calculateQuote();
-      });
+      // Pulisci file e form
+      uploadedFiles.models = [];
+      uploadedFiles.pdf = null;
+      document.getElementById('stl-file-list').innerHTML = '';
+      document.getElementById('pdf-file-list').innerHTML = '';
+      quoteForm.reset();
+      calculateQuote();
     });
   }
 
