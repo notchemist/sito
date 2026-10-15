@@ -14,10 +14,11 @@ Il codice è già organizzato e ottimizzato per funzionare direttamente su **Git
 
 2. **Carica i file del progetto:**
    - Carica direttamente i seguenti file nella radice (`root`) del repository:
-     - `index.html`
-     - `style.css`
-     - `script.js`
-     - `README.md`
+     - `index.html` (Sito pubblico per i clienti)
+     - `admin.html` (Pannello Gestione Ordini & Download File 3D/PDF)
+     - `style.css` (Design e stili responsive)
+     - `script.js` (Logica calcolatore e salvataggio ordini)
+     - `README.md` (Documentazione)
 
 3. **Attiva GitHub Pages:**
    - Nel tuo repository GitHub, clicca su **Settings** (Impostazioni) in alto a destra.
@@ -76,6 +77,36 @@ Il codice è già organizzato e ottimizzato per funzionare direttamente su **Git
 
 9. **Footer Completo & Toast Notifications:**
    - Notifiche toast fluttuanti animate per conferme di caricamento file e preventivi.
+
+---
+
+## 📋 Dove Visualizzare le Ordinazioni e i File Condivisi dai Clienti
+
+Essendo GitHub Pages un hosting statico gratuito (senza un database server-side proprietario), abbiamo implementato **3 canali complementari e immediati** per non perdere nessun ordine:
+
+### 1. Dashboard Interna Integrata (`admin.html`)
+- Nel sito web trovi un collegamento rapido in alto (`📋 Dashboard Ordini Lab`) e nel footer (`⚙️ Dashboard Ordini & File STL`), oppure puoi accedere direttamente aprendo **`admin.html`** (sul tuo sito: `https://tuo-username.github.io/layerlab-3d/admin.html`).
+- **Cosa puoi fare nella Dashboard:**
+  - Visualizzare l'elenco completo di tutti i preventivi ricevuti in tempo reale.
+  - Vedere Nome, Email, Indirizzo del cliente, Materiale, Infill e Prezzo calcolato.
+  - **Scaricare con 1 click i file 3D (.stl, .obj, .3mf) e il PDF di istruzioni** caricati dal cliente tramite i pulsanti `💾 Scarica`.
+  - Vedere la palette visiva dei **4 colori scelti** per la stampante Snapmaker U1.
+  - Aggiornare lo stato di produzione: *Nuovo*, *In Stampa*, *Spedito*.
+  - **Esportare l'archivio in Excel / CSV** con un semplice clic sul pulsante *📥 Esporta Ordini*.
+
+### 2. Ricezione Istantanea via WhatsApp
+- Nel modulo di preventivo è presente il tasto **"💬 Oppure Invia Preventivo su WhatsApp"**.
+- Cliccandolo, il cliente apre una chat diretta con il tuo numero con il messaggio precompilato contenente: file selezionato, i 4 colori scelti, il materiale, la quantità e il totale in euro!
+
+### 3. Ricezione Automatica dei File nella tua Email (Zero Costi)
+Se desideri ricevere un'email ogni volta che un cliente invia una richiesta:
+- Registrati gratuitamente su [formspree.io](https://formspree.io) o [web3forms.com](https://web3forms.com).
+- Crea un nuovo form e copia il tuo link ID (es. `https://formspree.io/f/xbjnyqzp`).
+- In `index.html`, alla riga `<form id="quote-form">`, imposta:
+  ```html
+  <form id="quote-form" action="https://formspree.io/f/IL_TUO_ID" method="POST" enctype="multipart/form-data">
+  ```
+- Riceverai una notifica email istantanea con i dati del cliente e i file allegati!
 
 ---
 

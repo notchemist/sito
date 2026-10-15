@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Ordini & File 3D | LayerLab 3D Admin</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Stili specifici Dashboard Amministratore */
+    .admin-body {
+      background-color: #060911;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-navbar {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .admin-badge {
+      background: var(--accent-orange);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      letter-spacing: 1px;
+    }
+    .admin-main {
+      flex: 1;
+      padding: 40px 0;
+    }
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .admin-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .admin-stat-num {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      margin-bottom: 4px;
+    }
+    .admin-stat-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .orders-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+    .panel-header-admin {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .admin-actions-bar {
+      display: flex;
+      gap: 12px;
+    }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+    .orders-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+    .orders-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+    .orders-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .order-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .status-new { background: rgba(0, 229, 255, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    .status-printing { background: rgba(255, 87, 34, 0.15); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .status-shipped { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    
+    .file-download-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin: 2px 0;
+    }
+    .file-download-chip:hover {
+      background: var(--accent-cyan);
+      color: #000;
+      border-color: var(--accent-cyan);
+    }
+    .pdf-download-chip:hover {
+      background: var(--accent-purple);
+      color: #fff;
+      border-color: var(--accent-purple);
+    }
+    .color-swatches-inline {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .swatch-mini {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .setup-guide-box {
+      margin-top: 40px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+    .setup-guide-box h3 {
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .setup-guide-box ol {
+      padding-left: 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .setup-guide-box code {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent-orange);
+    }
+    @media(max-width: 900px) {
+      .admin-stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width: 600px) {
+      .admin-stats-grid { grid-template-columns: 1fr; }
+      .admin-navbar { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body class="admin-body">
+
+  <!-- Admin Navbar -->
+  <header class="admin-navbar">
+    <div class="admin-title-wrap">
+      <a href="index.html" class="brand-logo">
+        <div class="logo-text">
+          <span class="logo-name">LayerLab<span class="accent-text">3D</span></span>
+        </div>
+      </a>
+      <span class="admin-badge">PANNELLO GESTIONE ORDINI & FILE</span>
+    </div>
+    <div class="admin-actions-bar">
+      <a href="index.html" class="btn btn-secondary btn-sm">← Torna al Sito Pubblico</a>
+      <button class="btn btn-primary btn-sm" id="btn-export-csv">📥 Esporta Ordini in Excel / CSV</button>
+      <button class="btn btn-secondary btn-sm" id="btn-clear-orders" style="color:#ef4444;" title="Pulisci archivio">Svuota Archivio</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <div class="container">
+      
+      <!-- Statistiche Veloci -->
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <span class="admin-stat-num" id="stat-total-orders">0</span>
+          <span class="admin-stat-title">Ordini Ricevuti</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num" id="stat-multicolor-orders" style="color:var(--accent-orange);">0</span>
+          <span class="admin-stat-title">Stampe Multi-Colore (Snapmaker U1)</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num" id="stat-files-count">0</span>
+          <span class="admin-stat-title">File STL / 3D & PDF Condivisi</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num" id="stat-total-revenue" style="color:var(--accent-green);">€0.00</span>
+          <span class="admin-stat-title">Valore Totale Preventivi</span>
+        </div>
+      </div>
+
+      <!-- Tabella Ordini -->
+      <div class="orders-panel">
+        <div class="panel-header-admin">
+          <div>
+            <h2>Tutte le Richieste & File di Stampa</h2>
+            <p style="color:var(--text-muted); font-size:0.875rem;">I file STL e PDF caricati dai clienti sono disponibili per il download immediato qui sotto.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-add-sample">Genera Ordine di Test</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="orders-table" id="orders-table">
+            <thead>
+              <tr>
+                <th>ID Ordine</th>
+                <th>Data & Ora</th>
+                <th>Cliente</th>
+                <th>File STL / Modelli 3D</th>
+                <th>Istruzioni PDF</th>
+                <th>Configurazione Colori</th>
+                <th>Materiale & Infill</th>
+                <th>Prezzo Stima</th>
+                <th>Stato Stampa</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body">
+              <!-- Righe generate dinamicamente da JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <div class="empty-state-icon">📭</div>
+          <h3>Nessun ordine ricevuto al momento</h3>
+          <p>Quando un cliente invia una richiesta di stampa dal modulo in homepage, l'ordine e i file compariranno automaticamente qui in tempo reale!</p>
+          <div style="margin-top: 16px;">
+            <a href="index.html#preventivo" class="btn btn-primary btn-sm">Fai una prova dal form</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guida: Come Ricevere i File anche via Email / WhatsApp -->
+      <div class="setup-guide-box">
+        <h3>💡 Come ricevere gli ordini e i file STL anche via Email o WhatsApp:</h3>
+        <p style="margin-bottom: 12px; color: var(--text-main); font-size: 0.95rem;">
+          Poiché GitHub Pages è un hosting statico gratuito, oltre a vederli in questa Dashboard puoi ricevere i file dei clienti direttamente sui tuoi canali preferiti:
+        </p>
+        <ol>
+          <li>
+            <strong>Ricevere i file direttamente nella tua EMAIL (Consigliato):</strong>
+            Utilizza un servizio gratuito come <strong>Formspree</strong> (50 sottomissioni/mese gratuite) o <strong>Web3Forms</strong>. Ti basta inserire il tuo codice endpoint nell'azione del form in <code>index.html</code> e riceverai un'email per ogni nuovo preventivo con i file STL/PDF allegati.
+          </li>
+          <li>
+            <strong>Ricevere i file su WHATSAPP:</strong>
+            Il pulsante <em>"Invia su WhatsApp"</em> integrato apre istantaneamente la chat diretta con il tuo numero di telefono precompilando il riassunto dell'ordine (materiale, 4 colori scelti, prezzo calcolato).
+          </li>
+          <li>
+            <strong>Caricamento su Google Drive:</strong>
+            I file STL superiori a 20MB possono essere collegati al tuo Google Drive o WeTransfer semplicemente aggiungendo il link nelle note del cliente.
+          </li>
+        </ol>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    // Inizializzazione specifica per la pagina Admin
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAdminDashboard();
+
+      document.getElementById('btn-export-csv')?.addEventListener('click', exportOrdersToCSV);
+      document.getElementById('btn-clear-orders')?.addEventListener('click', () => {
+        if (confirm('Sei sicuro di voler cancellare tutti gli ordini dall\'archivio locale?')) {
+          localStorage.removeItem('layerlab_orders');
+          renderAdminDashboard();
+        }
+      });
+
+      document.getElementById('btn-add-sample')?.addEventListener('click', () => {
+        addSampleOrder();
+        renderAdminDashboard();
+      });
+    });
+
+    function getOrders() {
+      try {
+        return JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderAdminDashboard() {
+      const orders = getOrders();
+      const tbody = document.getElementById('orders-table-body');
+      const emptyState = document.getElementById('empty-state');
+      const table = document.getElementById('orders-table');
+
+      // Statistiche
+      let multicolorCount = 0;
+      let totalFiles = 0;
+      let totalRevenue = 0;
+
+      orders.forEach(ord => {
+        if (ord.isMultiColor) multicolorCount++;
+        totalFiles += (ord.models ? ord.models.length : 1);
+        if (ord.hasPdf) totalFiles++;
+        totalRevenue += (parseFloat(ord.finalPrice) || 0);
+      });
+
+      document.getElementById('stat-total-orders').textContent = orders.length;
+      document.getElementById('stat-multicolor-orders').textContent = multicolorCount;
+      document.getElementById('stat-files-count').textContent = totalFiles;
+      document.getElementById('stat-total-revenue').textContent = `€${totalRevenue.toFixed(2)}`;
+
+      if (orders.length === 0) {
+        tbody.innerHTML = '';
+        table.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      table.style.display = 'table';
+      emptyState.style.display = 'none';
+      tbody.innerHTML = '';
+
+      orders.forEach((ord, index) => {
+        const tr = document.createElement('tr');
+
+        // Formatta Modelli 3D
+        let modelsHtml = '';
+        if (ord.models && ord.models.length > 0) {
+          ord.models.forEach(m => {
+            if (m.dataUrl) {
+              modelsHtml += `<a href="${m.dataUrl}" download="${m.name}" class="file-download-chip" title="Scarica file 3D">💾 ${m.name}</a><br>`;
+            } else {
+              modelsHtml += `<span class="file-download-chip">📦 ${m.name} (${m.size || '3D'})</span><br>`;
+            }
+          });
+        } else {
+          modelsHtml = '<span style="color:var(--text-dim)">Nessun file</span>';
+        }
+
+        // Formatta PDF
+        let pdfHtml = '';
+        if (ord.pdf) {
+          if (ord.pdf.dataUrl) {
+            pdfHtml = `<a href="${ord.pdf.dataUrl}" download="${ord.pdf.name}" class="file-download-chip pdf-download-chip" title="Scarica istruzioni PDF">📄 ${ord.pdf.name}</a>`;
+          } else {
+            pdfHtml = `<span class="file-download-chip pdf-download-chip">📄 ${ord.pdf.name}</span>`;
+          }
+        } else {
+          pdfHtml = '<span style="color:var(--text-dim)">-</span>';
+        }
+
+        // Formatta Colori
+        let colorsHtml = '';
+        if (ord.isMultiColor && ord.slots) {
+          colorsHtml = `<strong>4 Colori (Snapmaker U1):</strong><div class="color-swatches-inline">`;
+          ord.slots.forEach(slot => {
+            colorsHtml += `<span class="swatch-mini" style="background-color:${slot.hex}" title="${slot.name}"></span>`;
+          });
+          colorsHtml += `</div>`;
+        } else {
+          colorsHtml = `Monocolore: <strong>${ord.singleColorName || 'Nero'}</strong>`;
+        }
+
+        // Status Badge
+        let statusBadge = `<span class="order-status-badge status-new">Nuovo</span>`;
+        if (ord.status === 'in_stampa') {
+          statusBadge = `<span class="order-status-badge status-printing">In Stampa</span>`;
+        } else if (ord.status === 'spedito') {
+          statusBadge = `<span class="order-status-badge status-shipped">Spedito</span>`;
+        }
+
+        tr.innerHTML = `
+          <td><strong>#${ord.id || (1000 + index)}</strong></td>
+          <td>${ord.date || 'Oggi'}</td>
+          <td>
+            <strong>${ord.clientName || 'Cliente'}</strong><br>
+            <a href="mailto:${ord.clientEmail}" style="color:var(--accent-cyan); font-size:0.75rem;">${ord.clientEmail || ''}</a><br>
+            <span style="color:var(--text-dim); font-size:0.75rem;">${ord.clientAddress || 'Italia'}</span>
+          </td>
+          <td>${modelsHtml}</td>
+          <td>${pdfHtml}</td>
+          <td>${colorsHtml}</td>
+          <td>
+            <strong>${ord.material || 'PLA Tough'}</strong><br>
+            <span style="color:var(--text-muted); font-size:0.75rem;">Infill: ${ord.infill || '25%'} • Layer: ${ord.resolution || '0.20mm'} • Q.tà: ${ord.quantity || 1}</span>
+          </td>
+          <td><strong style="color:var(--accent-cyan); font-size:1.1rem;">€${parseFloat(ord.finalPrice || 0).toFixed(2)}</strong></td>
+          <td>
+            <select class="form-select status-select" data-index="${index}" style="padding:4px 8px; font-size:0.75rem;">
+              <option value="nuovo" ${ord.status === 'nuovo' || !ord.status ? 'selected' : ''}>Nuovo</option>
+              <option value="in_stampa" ${ord.status === 'in_stampa' ? 'selected' : ''}>In Stampa</option>
+              <option value="spedito" ${ord.status === 'spedito' ? 'selected' : ''}>Spedito</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm btn-delete-order" data-index="${index}" style="padding:4px 8px; color:#ef4444;" title="Elimina Ordine">🗑️</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      // Listeners cambio stato
+      document.querySelectorAll('.status-select').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+          const idx = e.target.getAttribute('data-index');
+          const orders = getOrders();
+          orders[idx].status = e.target.value;
+          localStorage.setItem('layerlab_orders', JSON.stringify(orders));
+        });
+      });
+
+      // Listeners cancellazione singola
+      document.querySelectorAll('.btn-delete-order').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = e.target.getAttribute('data-index');
+          const orders = getOrders();
+          orders.splice(idx, 1);
+          localStorage.setItem('layerlab_orders', JSON.stringify(orders));
+          renderAdminDashboard();
+        });
+      });
+    }
+
+    function addSampleOrder() {
+      const orders = getOrders();
+      const sample = {
+        id: Math.floor(1000 + Math.random() * 9000),
+        date: new Date().toLocaleString('it-IT'),
+        clientName: 'Marco Bianchi',
+        clientEmail: 'marco.maker@gmail.com',
+        clientAddress: 'Bologna (BO)',
+        notes: 'Logo aziendale in 4 colori, orientare piatto.',
+        isMultiColor: true,
+        slots: [
+          { name: 'Nero Stealth', hex: '#111827' },
+          { name: 'Arancio Cyber', hex: '#ff5722' },
+          { name: 'Ciano Elettrico', hex: '#00e5ff' },
+          { name: 'Bianco Ghiaccio', hex: '#f8fafc' }
+        ],
+        material: 'PLA Tough',
+        infill: '25%',
+        resolution: '0.16mm',
+        size: 'Medium',
+        quantity: 2,
+        finalPrice: 48.50,
+        status: 'nuovo',
+        models: [
+          { name: 'targa_logo_multicolor.3mf', size: '4.8 MB', dataUrl: null }
+        ],
+        pdf: { name: 'istruzioni_posizionamento_colori.pdf', size: '1.2 MB', dataUrl: null }
+      };
+
+      orders.unshift(sample);
+      localStorage.setItem('layerlab_orders', JSON.stringify(orders));
+    }
+
+    function exportOrdersToCSV() {
+      const orders = getOrders();
+      if (orders.length === 0) {
+        alert('Nessun ordine presente da esportare.');
+        return;
+      }
+
+      let csv = 'ID;Data;Cliente;Email;Indirizzo;Modalita;Materiale;Quantita;Totale Prezzo;File 3D;Istruzioni PDF;Note\n';
+      orders.forEach(o => {
+        const modelsStr = o.models ? o.models.map(m => m.name).join(' | ') : '';
+        const pdfStr = o.pdf ? o.pdf.name : '';
+        const modeStr = o.isMultiColor ? 'Multi-Colore 4X (Snapmaker U1)' : 'Monocolore';
+        csv += `"${o.id}";"${o.date}";"${o.clientName}";"${o.clientEmail}";"${o.clientAddress}";"${modeStr}";"${o.material}";"${o.quantity}";"€${o.finalPrice}";"${modelsStr}";"${pdfStr}";"${(o.notes || '').replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `layerlab_ordini_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

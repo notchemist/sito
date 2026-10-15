@@ -522,29 +522,132 @@ function initQuoteCalculator() {
         return;
       }
 
-      // Simulazione invio ordine / preventivo
+      // Salvataggio reale dell'ordine per la visualizzazione nella Dashboard (admin.html)
       const submitBtn = document.getElementById('btn-submit-quote');
       const originalText = submitBtn.innerHTML;
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span>Elaborazione & Invio File in corso...</span>';
 
-      setTimeout(() => {
+      const notes = document.getElementById('order-notes')?.value.trim() || '';
+      const materialOption = materialSelect.options[materialSelect.selectedIndex];
+      const materialText = materialOption.text.split('(')[0].trim();
+      const infillText = infillSelect.options[infillSelect.selectedIndex].text;
+      const resolutionText = resolutionSelect.options[resolutionSelect.selectedIndex].text;
+      const currentFinalPrice = document.getElementById('final-price')?.textContent || '0.00';
+      const quantity = parseInt(qtyInput.value, 10) || 1;
+
+      // Leggi file con FileReader per consentire il download nella dashboard
+      const filePromises = uploadedFiles.models.map(file => {
+        return new Promise((resolve) => {
+          if (file.size < 12 * 1024 * 1024) { // Entro 12MB salva in DataURL per download diretto
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({ name: file.name, size: formatBytes(file.size), dataUrl: e.target.result });
+            reader.onerror = () => resolve({ name: file.name, size: formatBytes(file.size), dataUrl: null });
+            reader.readAsDataURL(file);
+          } else {
+            resolve({ name: file.name, size: formatBytes(file.size), dataUrl: null });
+          }
+        });
+      });
+
+      let pdfPromise = Promise.resolve(null);
+      if (uploadedFiles.pdf) {
+        pdfPromise = new Promise((resolve) => {
+          if (uploadedFiles.pdf.size < 10 * 1024 * 1024) {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: e.target.result });
+            reader.onerror = () => resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: null });
+            reader.readAsDataURL(uploadedFiles.pdf);
+          } else {
+            resolve({ name: uploadedFiles.pdf.name, size: formatBytes(uploadedFiles.pdf.size), dataUrl: null });
+          }
+        });
+      }
+
+      Promise.all([...filePromises, pdfPromise]).then(results => {
+        const modelsData = results.slice(0, filePromises.length);
+        const pdfData = results[results.length - 1];
+
+        const newOrder = {
+          id: Math.floor(1000 + Math.random() * 9000),
+          date: new Date().toLocaleString('it-IT'),
+          clientName: name,
+          clientEmail: email,
+          clientAddress: address,
+          notes: notes,
+          isMultiColor: isMulti,
+          singleColorName: selectedSingleColor.name,
+          slots: isMulti ? [...multiColorSlots] : [],
+          material: materialText,
+          infill: infillText,
+          resolution: resolutionText,
+          quantity: quantity,
+          finalPrice: currentFinalPrice,
+          status: 'nuovo',
+          models: modelsData,
+          pdf: pdfData
+        };
+
+        try {
+          const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
+          currentOrders.unshift(newOrder);
+          localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
+        } catch (err) {
+          console.warn('Storage quota limit reached, saving metadata only:', err);
+          // Fallback senza dataUrl in caso di file pesanti
+          newOrder.models = newOrder.models.map(m => ({ name: m.name, size: m.size, dataUrl: null }));
+          if (newOrder.pdf) newOrder.pdf.dataUrl = null;
+          const currentOrders = JSON.parse(localStorage.getItem('layerlab_orders') || '[]');
+          currentOrders.unshift(newOrder);
+          localStorage.setItem('layerlab_orders', JSON.stringify(currentOrders));
+        }
+
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
 
-        const colorModeText = isMulti ? 'Multi-Colore 4X (Snapmaker U1)' : `Monocolore (${selectedSingleColor.name})`;
         const fileNames = uploadedFiles.models.map(m => m.name).join(', ');
-        
         showToast(
-          'Preventivo Inviato con Successo!', 
-          `Grazie ${name}! Abbiamo ricevuto il modello (${fileNames}). Riceverai l'analisi tecnica 3D all'indirizzo ${email}.`,
+          'Ordine Registrato con Successo!', 
+          `Grazie ${name}! Il file (${fileNames}) è stato archiviato. Puoi visualizzarlo e scaricarlo nella Dashboard Ordini!`,
           '🚀'
         );
 
-        // Reset o notifica
+        // Pulisci file e form
+        uploadedFiles.models = [];
+        uploadedFiles.pdf = null;
+        document.getElementById('stl-file-list').innerHTML = '';
+        document.getElementById('pdf-file-list').innerHTML = '';
         quoteForm.reset();
         calculateQuote();
-      }, 1200);
+      });
+    });
+  }
+
+  // Invio rapido preventivo tramite WhatsApp
+  const whatsappBtn = document.getElementById('btn-whatsapp-quote');
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', () => {
+      const isMulti = document.querySelector('input[name="print-mode"]:checked').value === 'multi';
+      const materialText = materialSelect.options[materialSelect.selectedIndex].text.split('(')[0].trim();
+      const currentFinalPrice = document.getElementById('final-price')?.textContent || '0.00';
+      const quantity = parseInt(qtyInput.value, 10) || 1;
+      const fileNames = uploadedFiles.models.length > 0 ? uploadedFiles.models.map(m => m.name).join(', ') : 'File da condividere';
+      
+      let colorDetails = isMulti 
+        ? `Multi-Colore 4X Snapmaker U1 (${multiColorSlots.map(s => s.name).join(' + ')})`
+        : `Monocolore (${selectedSingleColor.name})`;
+
+      const message = `Ciao LayerLab 3D! 👋\nVorrei richiedere la stampa 3D per questo progetto:\n\n` +
+        `📦 File 3D: ${fileNames}\n` +
+        `🎨 Modalità: ${colorDetails}\n` +
+        `🧵 Materiale: ${materialText}\n` +
+        `🔢 Quantità: ${quantity} pz\n` +
+        `💶 Preventivo Stimato: €${currentFinalPrice}\n\n` +
+        `Posso inviarvi qui il file STL per la conferma definitiva?`;
+
+      const encodedMsg = encodeURIComponent(message);
+      // Sostituisci il numero 390000000000 con il numero WhatsApp ufficiale del laboratorio
+      window.open(`https://api.whatsapp.com/send?phone=393330000000&text=${encodedMsg}`, '_blank');
     });
   }
 }

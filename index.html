@@ -24,6 +24,7 @@
       </div>
       <div class="top-bar-contact">
         <span class="pulse-dot"></span> Parco macchine attivo • <strong>Snapmaker U1 4-Colori Ready</strong>
+        <a href="admin.html" class="admin-top-link" style="margin-left: 14px; color: var(--accent-cyan); text-decoration: underline; font-weight: 600;" title="Pannello di controllo per visualizzare ordini e scaricare i file 3D">📋 Dashboard Ordini Lab</a>
       </div>
     </div>
   </div>
@@ -600,10 +601,15 @@
                   <input type="text" id="client-address" class="form-input" placeholder="Es. Milano, Roma, Napoli o CAP...">
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg btn-glow" id="btn-submit-quote">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                  <span>Invia Richiesta & Ricevi Valutazione 3D</span>
-                </button>
+                <div class="submit-buttons-wrap" style="display:flex; flex-direction:column; gap:10px;">
+                  <button type="submit" class="btn btn-primary btn-block btn-lg btn-glow" id="btn-submit-quote">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                    <span>Invia Richiesta & Ricevi Valutazione 3D</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-block" id="btn-whatsapp-quote" style="border-color:#25d366; color:#25d366;">
+                    <span>💬 Oppure Invia Preventivo su WhatsApp</span>
+                  </button>
+                </div>
                 <p class="privacy-note">🔒 I tuoi file 3D e dati personali sono protetti da NDA. Non condivideremo mai i tuoi progetti a terzi.</p>
               </div>
             </form>
@@ -1034,6 +1040,7 @@
       <div class="footer-col">
         <h4 class="footer-heading">Garanzie & Supporto</h4>
         <ul class="footer-links">
+          <li><a href="admin.html" style="color:var(--accent-orange); font-weight:700;">⚙️ Dashboard Ordini & File STL</a></li>
           <li><a href="#faq">FAQ & Domande Frequenti</a></li>
           <li><a href="#preventivo">Controllo File STL Gratuito</a></li>
           <li><a href="#contatti">Assistenza WhatsApp & Email</a></li>
